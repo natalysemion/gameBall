@@ -2,51 +2,65 @@
 <html>
 <head>
     <title>Гра</title>
+    <style>
+        canvas {
+            background-color: #ffffe6; 
+        }
+    </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="1400" height="700"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <script>
-        // Отримуємо доступ до canvas та його контексту
         var canvas = document.getElementById("gameCanvas");
         var ctx = canvas.getContext("2d");
 
-        // Розмір м'яча та початкові координати
+        // Отримуємо розміри вікна
+        var windowWidth = window.innerWidth;
+        var windowHeight = window.innerHeight;
+
+        canvas.width = windowWidth - 20;
+        canvas.height = windowHeight - 20;
+        
+        ctx.fillStyle = "##e6ffe6";
+
         var ballRadius = 10;
         var x = canvas.width / 2;
         var y = canvas.height - 30;
-
-        // Початкова швидкість м'яча
         var dx = 2;
         var dy = -2;
+        var colors = ["red", "yellow", "blue", "green"];
+        var colorIndex = 0;
 
-        // Розмір ракетки та її початкові координати
-        var paddleWidth = 75;
+        var paddleWidth = 100; 
         var paddleHeight = 10;
         var paddleX = (canvas.width - paddleWidth) / 2;
 
-        // Змінна для відстеження натискання клавіш
         var rightPressed = false;
         var leftPressed = false;
 
-        // Функція для малювання м'яча
+        var gameStarted = true;
+
         function drawBall() {
             ctx.beginPath();
-            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
+            ctx.moveTo(x, y - ballRadius);
+            for (var i = 1; i <= 5; i++) {
+                var angle = Math.PI * 2 * i / 5 - Math.PI / 2;
+                var starX = x + ballRadius * Math.cos(angle);
+                var starY = y + ballRadius * Math.sin(angle);
+                ctx.lineTo(starX, starY);
+            }
             ctx.closePath();
+            ctx.fillStyle = colors[colorIndex];
+            ctx.fill();
         }
 
-        // Функція для малювання ракетки
         function drawPaddle() {
             ctx.beginPath();
             ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
             ctx.fillStyle = "#0095DD";
             ctx.fill();
-            ctx.closePath();
         }
 
-        // Функція для відслідковування натискання клавіш
         function keyDownHandler(e) {
             if (e.key == "Right" || e.key == "ArrowRight") {
                 rightPressed = true;
@@ -63,52 +77,48 @@
             }
         }
 
-        // Встановлюємо обробники подій для клавіш
-        document.addEventListener("keydown", keyDownHandler, false);
-        document.addEventListener("keyup", keyUpHandler, false);
-
-        // Функція для оновлення гри
         function updateGameArea() {
-            // Очищаємо canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Малюємо м'яч та ракетку
             drawBall();
             drawPaddle();
 
-            // Змінюємо координати м'яча
-            x += dx;
-            y += dy;
+            if (gameStarted) {
+                x += dx;
+                y += dy;
 
-            // Відскок м'яча від меж canvas
-            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-                dx = -dx;
-            }
+                if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                    dx = -dx;
+                    colorIndex = (colorIndex + 1) % colors.length;
+                }
 
-            if (y + dy < ballRadius) {
-                dy = -dy;
-            } else if (y + dy > canvas.height - ballRadius) {
-                // Перевіряємо, чи м'яч влучив у ракетку
-                if (x > paddleX && x < paddleX + paddleWidth) {
+                if (y + dy < ballRadius) {
                     dy = -dy;
-                } else {
-                    // Гра закінчилася
-                    document.location.reload();
+                    colorIndex = (colorIndex + 1) % colors.length;
+                } else if (y + dy > canvas.height - ballRadius) {
+                    if (x > paddleX && x < paddleX + paddleWidth) {
+                        dy = -dy;
+                        colorIndex = (colorIndex + 1) % colors.length;
+                    } else {
+                        gameStarted = false;
+                        alert("Гра закінчилася. Натисніть OK, щоб спробувати ще раз.");
+                        document.location.reload();
+                    }
+                }
+
+                if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                    paddleX += 7;
+                } else if (leftPressed && paddleX > 0) {
+                    paddleX -= 7;
                 }
             }
 
-            // Рух ракетки
-            if (rightPressed && paddleX < canvas.width - paddleWidth) {
-                paddleX += 7;
-            } else if (leftPressed && paddleX > 0) {
-                paddleX -= 7;
-            }
-
-            // Запускаємо функцію оновлення гри наступного кадру
             requestAnimationFrame(updateGameArea);
         }
 
-        // Запускаємо гру
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
         updateGameArea();
     </script>
 </body>
